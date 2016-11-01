@@ -1,0 +1,257 @@
+---
+title: "General Social Survey"
+output: 
+  html_document: 
+    theme: cerulean
+---
+
+<hr />
+
+#### Background
+For this week's analysis we will be using the General Social Survey (GSS) to run a logistic regression. "The General Social Survey (GSS) conducts basic scientific research on the structure and development of American society with a data-collection program designed to both monitor societal change within the United States and to compare the United States to other nations."[$^1$](http://www3.norc.org/GSS+Website/) It is a cooperative effort to survey the American people every couple years asking a wide variety of questions and has been going on since 1972. The 2012 data file is contained in the file `GSS.csv`.
+
+After parsing through some of the data and variables it only seems appropriate that we try to predict political party affiliation given that it's an election year and currently a hot topic. 
+
+So for this week's analysis we will atempt to build a logistic regression model that is significant, has a good fit, and predicts political party affiliation. We will be using a few variables taken from the `GSS` to do build this model. 
+
+#### Questions and Hypotheses
+So many different questions could be answered by testing the `GSS` dataset. There are nearly 2000 observations and close to 1000 variables. For this particular analysis we will be focusing on a few specific variables:
+$$
+\textit{PartyID, Age, Sex, Race, Degree, & Church Attendance}
+$$
+Since we are tyring to predict whether or not someone associates themselves as either a `Democrat` or `Republican` the question we will be asking today is: 
+
+<center>
+<div style="font-weight:bold;">
+Does a person's frequency of church attendance, their sex, race, education level predict their affiliation with the Republican party?
+</div>
+</center>
+
+Age could be a confounding factor, as older people may tend to feel a certain way, so it will be included in the model as a covariate. The variables divlaw, pray, and age will be used to analyze this question. We will use a multiple logistic regression of the form:
+$$
+  P(Y_i = 1|\, x_{i1},x_{i22},\ldots,x_{i59}) = \frac{e^{\beta_0 + \beta_1 x_{i1} + \beta_2 x_{i22} + \ldots + \beta_15 x_{i59}}}{1+e^{e^{\beta_0 + \beta_1 x_{i1} + \beta_2 x_{i22} + \ldots + \beta_15 x_{i59}}}} = \pi_i
+$$
+<center>
+| Variable | Value | Explanation |
+|----------|-------|-------------|
+| $x_{i1}$ | 18 to 99 | the age of the individual |
+| $x_{i22}$ | `sex == 2` | individual is a female |
+| $x_{i32}$ | `race == 2` | individual is black |
+| $x_{i33}$ | `race == 3` | individual identifies as a `other` race |
+| $x_{i42}$ | `degree == 1` | individual has highschool diploma|
+| $x_{i43}$ | `degree == 2` | individual has some college |
+| $x_{i44}$ | `degree == 3` | individual has associates degree |
+| $x_{i45}$ | `degree == 4` | individual has bachelors degree |
+| $x_{i52}$ | `attend == 1` | individual sometimes attends church once a year|
+| $x_{i53}$ | `attend == 2` | individual attends church once a year  |
+| $x_{i54}$ | `attend == 3` | individual attends church several times a year  |
+| $x_{i55}$ | `attend == 4` | individual attends church once a month  |
+| $x_{i56}$ | `attend == 5` | individual attends church 2-3 times a month  |
+| $x_{i57}$ | `attend == 6` | individual attends church nearly every week  |
+| $x_{i58}$ | `attend == 7` | individual attends church every week |
+| $x_{i59}$ | `attend == 8` | individual attends church several times a week |
+</center>
+
+$Y_i=1$ will denote a person who affiliates with the Republican Party and $Y_i=0$ will denote a person who affiliates with the Democratic Party. 
+
+As we are not interested in `age`, the hypotheses for this study will concern the coefficients of the various responses for `sex`, `race`, `degree` and `attend`.
+$$
+  H_0: \beta_0 = 0 \\ 
+  H_a: \beta_0 \neq 0
+$$
+$$
+  H_0: \beta_2 = 0 \\
+  H_a: \beta_2 \neq 0
+$$
+$$
+  H_0: \beta_3 = 0 \\
+  H_a: \beta_3 \neq 0
+$$
+$$
+  H_0: \beta_4 = 0 \\
+  H_a: \beta_4 \neq 0
+$$
+$$
+  H_0: \beta_5 = 0 \\
+  H_a: \beta_5 \neq 0
+$$
+$$
+  H_0: \beta_6 = 0 \\
+  H_a: \beta_6 \neq 0
+$$
+$$
+  H_0: \beta_7 = 0 \\
+  H_a: \beta_7 \neq 0
+$$
+$$
+  H_0: \beta_8 = 0 \\
+  H_a: \beta_8 \neq 0
+$$
+$$
+  H_0: \beta_9 = 0 \\
+  H_a: \beta_9 \neq 0
+$$
+$$
+  H_0: \beta_{10} = 0 \\
+  H_a: \beta_{10} \neq 0
+$$
+$$
+  H_0: \beta_{11} = 0 \\
+  H_a: \beta_{11} \neq 0
+$$
+$$
+  H_0: \beta_{12}= 0 \\
+  H_a: \beta_{12} \neq 0
+$$
+$$
+  H_0: \beta_{13} = 0 \\
+  H_a: \beta_{13} \neq 0
+$$
+$$
+  H_0: \beta_{14} = 0 \\
+  H_a: \beta_{14} \neq 0
+$$
+$$
+  H_0: \beta_{15}= 0 \\
+  H_a: \beta_{15} \neq 0
+$$
+
+Let's take a look at what the GSS variable `partyid` means and what its values represent:
+<center>
+| Response | Meaning |
+|----------|---------|
+| 0 | Strong Democrat |
+| 1 | Not Strong Democrat |
+| 2 | Independent Leaning Democrat |
+| 3 | Independent |
+| 4 | Independent Leaning Republican |
+| 5 | Not Strong Republican |
+| 6 | Strong Republican |
+| 7 | Other |
+| 8 | Don't Know |
+| 9 | Not Applicable |
+</center>
+
+Since we will only be looking at Republican vs. Democrat for this analysis we will combine `0-2` as the Democrat category and `4-6` as the Republican category. We will throw away all the entries who's values are `3, 7, 8, 9` since we ar not looking to predict Independents or Other parties. The values `8 & 9` are also values we can't use in our regression.  
+
+***For the sake of keeping this analyis relative and to the point, I will not provide the code on how we went about cleaning the dataset. Since most of our variables had values that were of little use (Meaning NAs or IAP values) You can refer to the table above describing the variables to see the final values included in the regression. The data has already been cleaned and prepped for analysis.***
+
+```{r, include=F}
+library(ggplot2)
+library(mosaic)
+library(ResourceSelection)
+library(pscl)
+library(survey)
+library(caret)
+```
+
+#### Data Analysis
+After reading in our data and setting the respective variables to `as.factor()` we can take a look at a few graphs to visualize our new dataframe.
+
+```{r, echo=F}
+GSS <- read.table("~/Desktop/Math 325 Notebook/Data/GSS2012.csv", header=TRUE, quote="\"")
+
+GSSc <- GSS[,c("partyid", "age", "sex", "race", "degree", "attend")]
+
+GSSc$sex <- as.factor(GSSc$sex)
+GSSc$race <- as.factor(GSSc$race)
+GSSc$degree <- as.factor(GSSc$degree)
+GSSc$attend <- as.factor(GSSc$attend)
+
+GSSc$partyid <- as.factor(GSSc$partyid)
+GSSc <- subset(GSSc, partyid %in% 1:7) 
+levels(GSSc$partyid) <- list(Democrat = c(0, 1, 2), Republican = c(4, 5, 6))
+GSSc <- subset(GSSc, partyid %in% c("Democrat","Republican"))
+GSSc <- subset(GSSc, degree %in% 0:4)
+GSSc <- subset(GSSc, attend %in% 0:8)
+GSSc$attend <- factor(GSSc$attend)
+
+write.csv(GSSc, "GSSc-PartyID.csv", row.names = F)
+```
+
+```{r, echo=F, fig.align='center'}
+barplot(table(GSSc$partyid), main="Democrat vs. Republican", xlab="partyid", ylab="Particpants", col = c("blue", "red"))
+
+ggplot(data=GSSc, aes(x=partyid, fill=partyid)) + geom_bar(stat="count", position=position_dodge(), size=.3) + guides(fill=F) + scale_fill_manual(values=c("#2d5986", "#cc0000")) + xlab("") + ylab("Particpants") + ggtitle("Democrat or Republican")
+
+ggplot(data = GSSc, aes(x=age, fill = partyid)) + geom_bar(stat = "count", position = "stack", size=.3) + guides(fill=F) + scale_fill_manual(values=c("#2d5986", "#cc0000")) + xlab("") + ylab("Particpants") + ggtitle("Age of Participants") + xlim(18,88)
+
+ggplot(data = GSSc, aes(x=sex, fill = partyid)) + geom_bar(stat = "count", position = "stack", size=.3) + guides(fill=F) + scale_fill_manual(values=c("#2d5986", "#cc0000"), labels=c("Male", "Female")) + xlab("") + ylab("") + ggtitle("Race of Participants")
+
+ggplot(data = GSSc, aes(x=race, fill = partyid)) + geom_bar(stat = "count", position = "stack", size=.3) + guides(fill=F) + scale_fill_manual(values=c("#2d5986", "#cc0000"), labels=c("Male", "Female")) + xlab("") + ylab("") + ggtitle("Race of Participants")
+
+ggplot(data = GSSc, aes(x=degree, fill = partyid)) + geom_bar(stat = "count", position = "stack", size=.3) + guides(fill=F) + scale_fill_manual(values=c("#2d5986", "#cc0000"), labels=c("Male", "Female")) + xlab("") + ylab("") + ggtitle("Degree of Participants")
+
+ggplot(data = GSSc, aes(x=attend, fill = partyid)) + geom_bar(stat = "count", position = "stack", size=.3) + guides(fill=F) + scale_fill_manual(values=c("#2d5986", "#cc0000"), labels=c("Male", "Female")) + xlab("") + ylab("") + ggtitle("Church Attendance of Participants")
+
+barplot(table(GSSc$age), main="Age of Particpants", xlab="age", ylab="Particpants", col="coral")
+
+barplot(table(GSSc$sex), main="Sex of Particpants", xlab="sex", ylab="Particpants", col = c("skyblue", "pink"))
+
+barplot(table(GSSc$race), main="Race of Particpants", xlab="race", ylab="Particpants", col=c("Light Salmon", "Aquamarine 1", "Khaki 1"))
+
+barplot(table(GSSc$degree), main="Education Level of Particpants", xlab="degree", ylab="Particpants", col="Honeydew 1")
+
+barplot(table(GSSc$attend), main="Church Attendance of Particpants", xlab="church attendance", ylab="Particpants", col="Goldenrod 1")
+```
+
+We can see that each of our variables have interesting distributions and while some of them might bring up some concern, we must recognize we are dealing with real world data and it's not always pretty and we must learn to work with what we are given. We can see that there is a pretty even amount of both Republicans and Democrats for our new dataframe. We can also see that there is quite a bit of people who never go to church and about the same amount of people who go to church every week. This could give us an idea of both extremes and the effect they have on predicting political affiliation. We can now run our regression to see if our variables have significance and then see if our model is a good fit by using the Hosmer-Lemeshow test. 
+
+```{r, echo=F}
+party.glm <- glm(partyid ~  age + sex + race + degree + attend, data = GSSc, family = binomial)
+summary(party.glm)
+```
+
+It's actually pretty amazing that we have over 15 categorical variables and still end up with most of them being significant in our model. As we can see that `age` ended up not being that signifcant in our model but all of `race` and `sex` were significant. Also most of the `degree` was significant expcept for those who had recieved a bachelor's degree. More research would be required to find out why that is. Also it looks like those who attend church are also significant to the model. 
+
+Let's check our `Goodness of Fit` test:
+```{r, echo=F}
+hoslem.test(party.glm$y, party.glm$fitted)
+```
+
+The Hosmer-Lemeshow test is used to test the goodness of fit for this logistic regression model. The null assumes the logistic regression is a good fit. As shown below, there is insufficient evidence to reject the null $(p = 0.7302)$ so we will conclude a good logistic fit on these data.
+
+Since it would techinically be impossible to graph my entire regression model (160 different possible combinations; requiring my graph to be 160 dimensions) I have just graphed a few of the possibilities below. You can see how church attendance seems to have the most affect on the model while some of the other variables are a little more flat in its relationship.
+
+```{r, echo=F, fig.align='center'}
+plot(partyid == "Republican" ~ age, data=GSSc, pch=16, cex=0.5, xlim=c(18,110), main="Logistic Regression Model Sample", ylab="Republican Party Afiliation")
+
+curve(exp(-0.878804 + 0.004989*x)/(1+exp(-0.878804 + 0.004989*x)), from=18, to=88, add=TRUE, col='firebrick')
+
+curve(exp(-0.878804 - 0.288434 + 0.004989*x)/(1+exp(-0.878804 - 0.288434+ 0.004989*x)), from=18, to=88, add=TRUE, col='skyblue')
+
+curve(exp(-0.878804 - 2.322870  + 0.004989*x)/(1+exp(-0.878804 - 2.322870 + 0.004989*x)), from=18, to=88, add=TRUE, col='green')
+
+curve(exp(-0.878804 + 0.461103 + 0.004989*x)/(1+exp(-0.878804 - 2.322870 + 0.004989*x)), from=18, to=88, add=TRUE, col='purple')
+
+curve(exp(-0.878804 + 0.487187 + 0.004989*x)/(1+exp(-0.878804 - 2.322870 + 0.004989*x)), from=18, to=88, add=TRUE, col='orange')
+
+legend("bottomright", c("age", "sex", "race", "degree", "attend"), lty=c(1,1,1,1,1), lwd=c(2.5,2.5),col=c("firebrick","skyblue","green","purple", "orange"))
+```
+
+#### Interpretation
+After running the regression we were able to tell which of our variables were significant and which were not. Also, we were able to find out the relationship the variables had with the outcome being `Republican`. Being female has a negative relationship with the outcome affirmed, same with being a race other than white. Going to church multiple times a week had the greatest increase in the probability of being Republican. With $e^{1.453542} = `r exp(1.453542)`$ being a near 400% increase in odds. The participants who surveyed as being black showed the greatest decrease in odds for being Republican with $e^{-2.322870} = `r exp(-2.322870)`$ showing a 90% drop in odds. 
+
+We can use the `predict()` function to predict what the model would say about my current answers to the variables:
+
+| Variable | Answer  |
+|----------|---------|
+| Age      |   22    |
+| Sex      | 1 (Male) |
+| Race     | 1 (White) |
+| Degree   | 3 (Associates Degree) |
+| Attend   | 7 (Church Every Sunday) |
+
+```{r, echo=FALSE}
+newdata <- data.frame(age=22, sex=1, race=1, degree=3, attend=7)
+newdata$sex <- as.factor(newdata$sex)
+newdata$race <- as.factor(newdata$race)
+newdata$degree <- as.factor(newdata$degree)
+newdata$attend <- as.factor(newdata$attend)
+```
+
+```{r}
+predict(party.glm, newdata, type = "response")
+```
+
+According to the model I have a $71\%$ probability of being Republican. It would be interesting to see how this model could stand up against using it on a major population. 

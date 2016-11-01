@@ -1,0 +1,105 @@
+---
+title: "Reading Comprehension"
+output: 
+  html_document:
+    theme: cerulean
+---
+
+<br />
+
+## Background
+
+"This study investigated the effectiveness of explicit instruction in 'think aloud' as a means to promote elementary students' comprehension monitoring abilities" [(Baumann & Jones, 1992)](http://jlr.sagepub.com/content/24/2/143.full.pdf).
+
+The following explanation of the experiment comes directly from the original research article [(Baumann & Jones, 1992)](http://jlr.sagepub.com/content/24/2/143.full.pdf).
+
+<div style="padding-left:30px; padding-right:30px;">
+
+Fourth-grade students from an elementary school in a rural midwestern community participated in the study. The school had adopted a team teaching plan, and three fourth-grade teachers shared an open classroom area. The teachers grouped the students for reading instruction across the three classes according to reading ability. One teacher each worked with a high [ability reading group], [one teacher worked with a] middle [ability group], and [the other teacher worked with the] low reading [ability] group. All groups used basal reading materials and were formed at the beginning of the school year on the basis of standardized achievement test data, prior performance in the basal reading program, and teacher judgment.
+
+Sixty-eight of the 72 students in the fourth-grade team participated in the study; the four nonparticipating students were mainstreamed special education students for whom the instructional materials were considered to be too frustrating to read. The 68 students were assigned randomly to one of the three experimental groups (Strat = 23 students; DRTA = 23 students; Basal = 22 students). Because of illness and transfer to another school, incomplete data were obtained for one subject each from the Strat and DRTA groups. Thus, the final sample consisted of 66 students, 32 girls and 34 boys.
+
+Posttests 1-3 were group-administered, quantitative measures obtained
+for all students in the sample. Posttest 1 was an error detection test. Posttest 2 was a comprehension monitoring questionnaire. Posttest 3 was a modified cloze test. To statistically account for students'
+preexperimental differences in comprehension monitoring abilities, two pretests were constructed, administered, and used as covariates in data analyses for Posttests 1-3.
+
+Pretest 1. The first pretest involved an error detection task designed to evaluate students' preintervention ability to monitor their comprehension.... Students were provided the following directions which were printed on the pretest and read aloud by the experimenter: 'Read the story carefully. Try to understand it as you read. There will be 16 sentences that do not belong in the story. Look for them as you read. Ask yourself, "What does not make sense in this story?" Underline the 16 sentences that do not make sense. Check your work when you are finished. If you cannot read a
+word, raise your hand, and we will help you.' Preceding Pretest 1, students were given a brief practice exercise that required them to identify obvious intruded sentences in two short texts. Pretest 1 was scored by calculating the number of correctly identified intruded sentences.
+
+Pretest 2. The second pretest queried students about the strategies they believed to be useful in promoting their understanding of stories. In this pretest, modeled after an instrument developed by Schmitt (1988, 1990), the students were presented with 15 multiple-choice items like the following:
+
+<div style="padding-left:15px;">
+When I read, it is a good idea to:
+
+A. sound out words I don't know.
+
+B. make some guesses about what will happen in the story.
+
+C. make a list of all the details in the story.
+
+D. look up new words in the dictionary.
+
+</div>
+
+Posttest 1: Error detection test. Posttest 1 was the same in form as Pretest 1: with 16 intruded sentences lexically consistent at a local level but semantically inconsistent at a global level. 
+
+Posttest 2: Comprehension monitoring questionnaire. Posttest 2, consisting of 18 items, was a slightly expanded version of Pretest 2. 
+
+Posttest 3: Degrees of Reading Power. The Degrees of Reading Power (DRP)
+(1986) is a standardized, commercially produced instrument that employs a modified cloze format (words are deleted from a selection and for each omission the student selects the most appropriate word from a list of five). According to the authors, DRP tests "are holistic measures of how well the messages within text are understood. . . . DRP tests focus measurement on determining how well students process or construct meaning from paragraphs as they read through a selection" (DRP Handbook, 1986, p. 1). Thus, the DRP, at one level, is a general reading comprehension assessment tool.
+
+</div>
+
+The data for this study are contained in the `Baumann` dataset.
+```{r, include=F}
+library(mosaic)
+library(pander)
+library(ggplot2)
+library(lmtest)
+```
+
+##Questions and Hypothesis
+The questions and hypothesis will be very simple for this analysis as we will just be seeing if **Post.Test.3** has different results across the three groups. So our NULL hypothesis is that the $\mu$ for all groups will be the same. And the alternative hypothesis is that at least one $\mu$ will be different. Below are the LaTeX equations for our hypothesis. We will be answering this question by using the appropriate tests. We will begin by using an ANOVA test and change accordingly if the dataset dictates. 
+$$
+\alpha = .05
+$$
+
+$$
+  H_0: \mu_A = \mu_B = \mu
+$$
+$$
+  H_a: \mu_i \neq \mu \ \text{for at least one}\ i\in\{1=A,2=B\}
+$$
+
+##Data Analysis
+We will begin by running an ANOVA the dataset `Baumann`. First we must make sure that our qualitative variable is declared as a `Factor` by using the str() function in R:
+
+```{r}
+str(Baumann)
+```
+
+As we can see, the `group` variable is already casted as a factor so the `as.factor()` function will be unneccesary in our ANOVA test. Next we can move onto running the actual one-way ANOVA test. Below is R code used to run that test:
+
+```{r}
+aov <- aov(post.test.3 ~ group, data = Baumann)
+summary(aov)
+```
+
+By the above results we can see that there is enough evidence to suggest rejecting our NULL hypothesis and accepting with a certain degree of confidence that at least one of the groups did better or worse in the `Post.Test.3`. This is could be the answer to our study but now we must check normality and the residual variance of these data. Below are two plots that will check to see if ANOVA is the appropriate test to run:
+
+```{r, echo=FALSE, fig.align='center'}
+par(mfrow=c(1,2))
+plot(aov, which=1:2, pch=16)
+```
+
+After looking at the plots there is some suspcision that our data might not be normal and the variance might not be consistent. We can double check by utilizing the Shapiro Test and the Breuch-Pagan Test. Both of which will check for normality and residual variance respectively. 
+
+```{r, echo=F}
+shapiro.test(aov$residuals)
+bptest(aov)
+```
+
+After running both of these test we can now be sure that our data is normal and our residuals are consistent. Both tests returned with p-values of over .05 which means that an ANOVA test was an apporpriate test to use. After analysing this data we can now come to a conclussion. 
+
+##Interpretation
+After running the one-way ANOVA test is seems that we can reject our NULL hypothesis in favor for our Alternative hypothesis. We can be certain that at least one of the groups $\mu$ is different then the others. Future tests could research what group was the most successfull in the `Post.Test.3` also more tests could be done on the effectiveness of the other tests. 

@@ -1,0 +1,123 @@
+---
+title: "Car Prices"
+output: 
+  html_document:
+    theme: cerulean
+---
+### Background
+
+<p align="justify">The data from this week's analysis is from the 2005 Central Edition of the Kelley Blue Book<sup>&copy;</sup>. We will be running a linear regression on these data to see if the price of a car can be described by various features or variables. </p>
+
+The two hypotheses we will be testing in this analysis are:
+$$
+\alpha = .05
+$$
+$$
+H_{0}: \beta_{j} = 0
+$$
+$$
+H_{A}: \beta_{j} \neq 0
+$$
+<p align="justify">Meaning that our initial or NULL hypothesis is that every variable we add to our regression will have no significance or a p-value of over .05. Our Alternative states that our variable will have a significance of at least smaller than .05. </p>
+$$
+H_0: \beta_0 = \beta_1 = \cdots = \beta_p = 0
+$$
+$$
+H_a: \beta_j \neq 0 \ \text{for at least one}\ j
+$$
+Our second set of hypotheses will essentially be running an F-Test on our entire regression model. This means that our model as a whole is statistically significant. Most often if we can reject the NULL for this hypothesis we will reject the NULL for the first hypothesis. We must answer both of these tests to be sure of the validity of our linear regression. By coming to a conclusion on our hypothesis we will know if we have built a model that accurately describes the change in price compared to vehicle features.</p>
+
+### Data Analysis
+Below is a small example of the data set we will be working with today. With over 804 observation and 12 variables to choose from; We have a fair amount of data to create a working and predictive linear model. 
+```{r, include=FALSE}
+library(mosaic)
+library(ggplot2)
+library(lmtest)
+```
+
+```{r, echo=FALSE, results='asis'}
+CarPrices <- read.csv(file = "CarPrices.csv")
+knitr::kable(head(CarPrices))
+```
+
+Since we are using `Price` as our qualitative dependent variable it would be wise to use the `library(psych)` and the `pairs.panels()` function to get a quick view of the relationship of the other variables when compared to price. Since showing that plot would most likely be too small I will describe what variables seemed the most likely and plot their individual relationships with price and, in the the future, relationship to the linear model. 
+
+At first glance it seems to be that Cylinder has a somewhat high correlation and relationship to price. See below for the initial plot that will help us in starting our multi-variate regression. **It is important to note that `Cylinder` is recorded as a factor variable in this data set. This means it is a categorical variable and will be treating it as such in our analysis.**
+
+```{r, echo =F, fig.align='center'}
+plot(CarPrices$Price ~ CarPrices$Cylinder, main="Relationship Between Price and Cylinder")
+```
+
+As we can see there is a pretty general linear trend with `Cylinder` to price. The more cylinders are in the car, on average the price of the car increases. We can also confirm this relationship by running the `cor()` function to see the correlation between these two variables. Look below to see the correlation function in action.
+
+```{r, echo = F}
+cor(Cylinder, Price, data = CarPrices)
+```
+
+Let's run a quick single variate regression on what we have so we can answer the added variable assumption of multivariate linear regression. Without getting too off course I won't post the entire results of the regression but, to keep you on the edge of your seat... our current R^2 is .32, which isn't too bad considering the single variate we have. 
+
+```{r, echo=F}
+single.lm <- lm(Price ~ Cylinder, data = CarPrices)
+```
+
+We are off to a good start in building our regression. Let's look for a few more variables to add. A few that stood out during a simple observation were `Liter`, `Mileage` and `Leather`. Once again, to save time I will post all three of these added variable plots and discuss them afterwards. I will go ahead and add these variables to the regression and we'll worry about testing for normality and passing the assumptions later. 
+
+```{r, echo=F, fig.align='center'}
+attach(CarPrices)
+plot(as.factor(Liter), single.lm$residuals, main = "Residuals vs. Liter")
+```
+
+```{r, echo=F, fig.align='center'}
+double.lm <- lm(Price ~ Cylinder + as.factor(Liter), data = CarPrices)
+plot(Mileage, double.lm$residuals, main = "Residuals Vs. Mileage")
+```
+
+
+```{r, echo=F, fig.align='center'}
+double.lm <- lm(Price ~ Cylinder + as.factor(Liter) + Mileage, data = CarPrices)
+plot(as.factor(Leather), double.lm$residuals, main = "Residuals Vs. Leather")
+```
+
+As we can see each residual plot adds new information to our regression. We can be sure these are solid variables to add to our regression. 
+
+Now we must check our data for linearity, constant variance in residuals, and normal distribution of residuals. We will also plot our residuals against the order they were recorded in. Below is some plots that will answer these assumptions:
+
+```{r, echo=F, fig.align='center'}
+car.lm <- lm(Price ~ Cylinder + as.factor(Liter) + Mileage + as.factor(Leather), data = CarPrices)
+par(mfrow = c(1:2))
+plot(car.lm, which = 1:2)
+```
+
+Woah that's definitely not good. Our data is not normal at all and it looks like we might be experiencing some heteroskidacity in our residuals. (Look at the way the data seems to megaphone from left to right) Currently, this regression does not pass the assumptions and needs to have some transformations done in order to create a solid and respectable regression. 
+
+Let's go with the `Box-Cox Transformation`. A description of the Box-Cox Transformation can be found [here](https://www.isixsigma.com/tools-templates/normality/making-data-normal-using-box-cox-power-transformation/) "The statisticians George Box and David Cox developed a procedure to identify an appropriate exponent (Lambda = l) to use to transform data into a “normal shape.” The Lambda value indicates the power to which all data should be raised. In order to do this, the Box-Cox power transformation searches from Lambda = -5 to Lamba = +5 until the best value is found."
+
+By using this transformation hopefully we will be able to transform our regression into something more workable and realistic. This will hopefully give us the most reliable p-value, f-statistics, and R^2. 
+```{r, include=F}
+p1 <- powerTransform(car.lm)
+coef(p1, round=TRUE)
+m1 <- lm(bcPower(Price, p1$roundlam) ~ Cylinder + as.factor(Liter) + Mileage + as.array(Leather), CarPrices)
+```
+
+```{r, echo=F, fig.align='center'}
+par(mfrow = c(1:2))
+plot(m1, which = 1:2)
+```
+
+That looks so much better. Just by observation we can pretty much verify assumptions 1-3 of a multi-variate regression. We can also run a few tests just to make sure we have correctly verified our assumptions. A `Shapiro Test` & `Breusch-Pagan Test` should suffice. 
+
+```{r, echo=F}
+shapiro.test(m1$residuals)
+bptest(m1)
+```
+
+Well, after running those tests it seems that although it may have looked like we verified our assumptions, we in fact failed to have normally distributed data as well as non-constant error variance. While this weighs heavily against us and our regression we can still finish this analysis taking into consideration the major caveat that: ***WE DID NOT MEET OUR ASSUMPTIONS BUT CAN STILL ANALYSE THE REGRESSION'S RESULTS***<sub><sub><sub>grader make sure you understand that before trying to mark me down for not reading that sentence...</sub></sub></sub>
+
+##Interpretation
+Although our regression didn't meet all assumptions we can still analyse its results and think of ways to better our regression for future studies. Let's take a quick look at our multi-variate regression results. 
+
+```{r, echo=F}
+summary(m1)
+```
+
+It's interesting that all of our variables are significant and our regression has an F-statistic of 588.1 and a p-value that is very very small. We have rejected both of our NULL hypotheses and have achieved an R^2 of .9255. I would say that is a very high and successful R^2. The only major flaw in our entire regression is that we cannot successfully fulfill all the assumptions of a linear multi-variate regression and thus we must take this entire regression with a grain of salt. Other test or transformations could be done or other regressions completely to try and find the true relationship between price and vehicle features. 

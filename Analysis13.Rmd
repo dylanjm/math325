@@ -1,0 +1,105 @@
+---
+title: "Food Stamp Participation -- Simple Logistic Regression"
+output: 
+  html_document:
+    theme: cerulean
+---
+
+<br />
+
+```{r, include=FALSE}
+library(mosaic)
+library(robustbase)
+library(ResourceSelection)
+library(pander)
+#needed to get the required dataset
+# If you get an error that 'robustbase' is not found
+# then you should run the 
+# > install.packages('robustbase') 
+# command in your Console.
+```
+
+
+#### Background
+
+Data was collected from 150 randomly selected elderly US citizens about their `participation (yes = 1, no = 0)` in the government food stamp program; what their `tenancy (owned = 1, rented = 0)` status was; whether or not they received supplemental income, `suppl.income (yes = 1, no = 0)`, like social security income; and what their monthly `income` was in US dollars.
+
+Today for our analysis we will be focusing on those individuals who rented their home. We will be running a logistic regression to see whether or not we can predict a person's participation in the food stamp program based on their monthly income. By using an alpha of .05 we will determine the significance of income in our glm and then run a Goodness of Fit test to determine if our model is valid. Our **NULL** hypothesis, **Alternative** hypothesis, and logistic regression model are generarated below:
+$$
+P(Y_i = 1|x_1) = \pi_i = \frac{e^{(\beta_{0}+\beta_{1}x_{1})}}{1 + e^{(\beta_{0}+\beta_{1}x_{1})}}
+$$
+
+$$
+\alpha = .05
+$$
+$$
+H_{0} = \beta_{1} = 0
+$$
+$$
+H_{0} = \beta_{1} \neq 0
+$$
+
+To explain in further detail what's above. $\beta_{1}$ will represent `income`. We will plug $\beta_{1}$ into our model to test for significance. If we can retrieve a p-value smaller than our alpha we can reject our NULL hypothesis in favor for our alternative. 
+
+<!-- Your goal for this analysis: Focusing in on those individuals that rented their home, can a logistic regression be used to predict whether or not a person will participate in the food stamp program based on their monthly income? Edit the background section to reflect this question, and complete your analysis accordingly. -->
+
+#### Data Analysis
+
+The first six observations of the dataset are shown below.
+
+<div style="padding-left:30px;padding-right:15px;">
+<center>
+```{r, echo=FALSE, fig.align='center'}
+tab <- foodstamp[1:6, ]
+pander(tab)
+```
+</center>
+
+Since we are primarily focusing on those people who rent their homes we can modify our dataset by using the `subset` function. Remember, we must subset our data when `tenancy` is equal to zero.  **<i>(R code included so those interested may follow along)</i>**
+```{r}
+Renters <- subset(foodstamp, tenancy == 0)
+```
+
+Now that we have a the true dataset we will be working with let's take a look at the first few observations to confirm a difference. Below we can see that the `tenancy` values have all changed to zero.
+<center>
+```{r, echo=F}
+tab <- Renters[1:6, ]
+row.names(tab) <- NULL
+pander(tab)
+```
+</center>
+
+Now we should be able to run our logistic regression. When running a `glm()` function, it's important to remember to put the binomial variable first. After that, it is then appropriate to put the qualitative or quantitative independant variables we will include in our model.
+
+```{r}
+food.glm <- glm(participation ~ income, data = Renters, family = binomial)
+```
+
+Now we can take a look at what our model came up with. This is where we will be able to answer our hypotheses from up above. Let's take a look at our glm summary below:
+
+```{r, echo=F}
+summary(food.glm)
+```
+
+From first observations, we did not retrieve a p-value for `income` that is less than the alpha of .05. We can therefore fail to reject our NULL hypothesis and assume that income is not a significant enough variable to predict particpation in the foodstamps program. Below is a plot that visualizes the relationship between `particpation` and `income`. Take note on how shallow the curve is; this is more evidence that the effect of income on particpation is not strong. 
+
+```{r, echo=F, fig.align='center'}
+plot(participation ~ income, data=Renters, main="Probability of Renter Participation to Income", ylab='Probability of Renter Participation', xlab="Monthly Income", pch=16)
+curve(exp(.184488-0.001993*x)/(1+exp(.184488-0.001993*x)), from=-100, to=1800, add=TRUE)
+```
+
+Although it isn't neccesary, we can perform a quick Hosmer-Lemeshow test on our model to test if it's a good fit. Since our variable is not significant, it won't make much of a difference but it might be good to have a record of information for future testing and model building.
+```{r, echo=F}
+hoslem.test(food.glm$y, food.glm$fitted)
+```
+
+And just for fun we can run a quick `predict()` function to see what probability a renter might have of particpating the foodstamps progam at ~$450 a month. 
+```{r}
+predict(food.glm, data.frame(income=450), type='response')
+```
+
+33% probability is pretty low after knowing how little 450 dollars a month is. Without more information or data, our model will continue to be pretty innacurate. 
+
+#### Interpretation
+After recieving an answer for our hypothesis and recognizing that `income` is not a significant variable we can conclude that this logistic regression won't be valid until further research is done, data is collected, or transformations performed. It would be interesting to see what adding `suppl.income` as factor the regression might do. That could be done in the future to develope a more valid logistic regression model. 
+</div>

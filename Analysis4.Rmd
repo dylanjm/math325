@@ -1,0 +1,110 @@
+---
+title: "Recalling Words"
+output: 
+  html_document:
+    theme: cerulean
+---
+
+<br />
+
+#### Background
+
+The `Friendly` data set contains data from an experiment that studied memory recall. 
+
+Individuals were seated at a computer and shown a list of words. Words appeared on the screen one at a time, for two seconds each, until all words had been shown (40 total). After all words were shown, they were required to perform a few two-digit mathematical additions (like 15 + 25) for 15 seconds to avoid immediate memory recall of the words. They were then asked to write down as many of the 40 words as they could remember. They were given a maximum of 5.3 minutes to recall words.
+
+The process of showing words and recalling words was repeated four times with the same list of words each time (four chances to get it right). The presentation of the first trial was the same for all treatment conditions. However, trials 2, 3, and 4 were slightly different for each treatment condition.
+
+<div style="padding-left:15px;">
+
+The `SFR` group (the control group) stands for Standard Free Recall. In all four trials the same list of 40 words was presented, in a random order each time.
+
+The `Before` group also used the same 40 words during each trial. However, any words that were correctly recalled in a previous trial were presented first, or *before* the words that were not recalled in the last trial. After all the correct words were presented in random order, the non-recalled words were presented in a random order.
+
+The `Meshed` group also used the same 40 words during each trial. However, words that were correctly recalled in a previous trial were alternated with a missed word during the next presentation order. 
+
+</div>
+
+The data records the number of correctly recalled words (out of the 40 possible) from the fourth trial. Results were obtained for 30 students, 10 in each of the three treatment groups: `SFR`, `Before`, and `Meshed`. 
+
+```{r, include=FALSE}
+# Needed to access the Friendly data set.
+# Do not delete this code.
+library(mosaic)
+library(pander)
+library(ggplot2)
+```
+
+<br />
+
+#### Questions and Hypotheses
+After reviewing these data it seems the inherent question to ask is, "Did any of the groups perform better than the control group?" We will attempt to answer this question by testing the distribution for normality and since these data are independent we will then continue by running the appropriate tests to retrieve our p-value. The null hypothesis assumes the diference in medians to be zero while the alternative hypothesis will test to see if the difference in medians is above or below zero. For this test we will be using the control group **"SFR"** and comparing it against both the **"Meshed"** and **"Before"** group. 
+$$
+\alpha = .05
+$$
+$$
+  H_0: \text{difference in medians} = 0
+$$
+$$
+  H_a: \text{difference in medians} \neq 0
+$$
+
+<br />
+
+#### Analysis
+
+The first step in finding an answer to the above mentioned question is to test for normality. This can be done by using the shaprio test or by using a qqPlot. Below is a small example of the data set we will be running tests on. It also becomes apparent after observing the qqPlot and Shapiro Tests that both the Before and SRF groups do not have a normal distribution which prompts the need to use a Wilcoxen Rank Sum Test (Mann-Whitey). It also appears that the Meshed data group has a normally distributed data set. A t-test could be used when running this test.  
+
+<center>
+```{r, echo=FALSE, fig.align='center'}
+Friendly2 <- with(Friendly, data.frame(
+  SFR = correct[condition=="SFR"],
+  Before = correct[condition=="Before"],
+  Meshed = correct[condition=="Meshed"]))
+pander(Friendly2[1:3, ])
+qqPlot(Friendly2$SFR, main="Distribution Test: SFR", xlab="Quantiles", ylab="Correct", col.lines = "#0077b3", col = "#800000", lwd = 1.5, cex = 1, pch = 19)
+tab.s <- shapiro.test(Friendly2$SFR)
+pander(tab.s)
+qqPlot(Friendly2$Meshed, main="Distribution Test: Meshed", xlab="Quantiles", ylab="Correct", col.lines = "#0077b3", col = "#800000", lwd = 1.5, cex = 1, pch = 19)
+tab.m <- shapiro.test(Friendly2$Meshed)
+pander(tab.m)
+qqPlot(Friendly2$Before, main="Distribution Test: Before", xlab="Quantiles", ylab="Correct", col.lines = "#0077b3", col = "#800000", lwd = 1.5, cex = 1, pch = 19)
+tab.b <- shapiro.test(Friendly2$Before)
+pander(tab.b)
+```
+</center>
+
+Here is a box plot to help visualize our data. Just by observation it looks like the non control groups have a higher memory recall than the SFR group. 
+```{r, echo=FALSE, warning=FALSE, fig.align='center'}
+boxplot(correct ~ condition, data=Friendly, boxwex=.3, col="gray", main="Memory Recall Group Comparrison")
+stripchart(correct ~ condition, data=Friendly, method="stack", 
+           vertical=TRUE, pch=16, col="steelblue4", cex=1.25,
+           add=TRUE)
+```
+
+Since we are using non-normal independent data, it's appropriate that we use a Wilcoxen Rank Sum Test using a "two.sided" as our alternative parameters and using an alpha of .05. But for our first test we will conduct just a simple t-test to see what p-value we get when comparing the SRF group to the Meshed Group.
+
+<center>
+```{r, echo=F, fig.align='center'}
+tab <- t.test(Friendly2$SFR, Friendly2$Meshed)
+pander(tab)
+```
+</center>
+
+The second test will compare the SRF group to the Before group to see how the other test matches up against SRF. The previous boxplot indicates that we should receive a p-value that rejects our null hypothesis. Since both of these data are not normally distributed we will be using a wilcoxen test. 
+
+<center>
+```{r, echo=F, fig.align='center', warning=F}
+tab.M <- wilcox.test(Friendly2$SFR, Friendly2$Before)
+pander(tab.M)
+```
+</center>
+
+While both tests computed p-values that would reject our null hypothesis. The second test comes much closer to not being statisically significant to be worth mentioning. 
+
+<br />
+
+#### Interpretation
+After determining the distribution of these and date picking out a correct test to run it under. We have come to the conclussion that both tests were somewhat better at increasing memory recal in particpants. This was shown by the visualization of these data and by the p-value that rejected our initial hypothesis that the difference in medians would be the same. By using these tests, it would be wise to suggest using the methods of both ***Meshed*** and ***Before*** when wanting to memorize something. 
+
+

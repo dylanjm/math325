@@ -1,0 +1,64 @@
+---
+title: "Descrimination"
+output: 
+  html_document: 
+    theme: cerulean
+---
+
+<br />
+
+#### Background
+
+Sometime around 1965 a survey was conducted where students at a certain university were asked the following question. "Do you think that some racial and religious groups should be prevented from living in certain sections of cities?" A summary of their response are recorded in the following table. The region of the United States that the student respondent was from was also recorded.
+
+<div style="padding-left:20%; padding-right:20%;">
+
+| Region | *Agree* | *Undecided* | *Disagree* |
+|--------|---------|-------------|------------|
+| East   |  89     |  79         |  297       |
+| Midwest| 118     | 130         |  350       |
+| South  | 241     | 140         |  248       |
+| West   |  37     |  59         |  197       |
+
+</div>
+
+There is really only one question that can be asked with this data set, "Is geographic location associated with increased support of discriminatory policies?"
+$$
+H_{0}: \text{Geographic Location and Support of Discrimination are independent}
+$$
+$$
+H_{A}: \text{Geographic Location and Support of Discrimination are associated (not independent)}
+$$
+$$
+\alpha = .05
+$$
+
+#### Data Analysis
+We can put the current data set into a matrix.
+```{r}
+discrimination <- matrix(c(89,79,297,118,130,350,241,140,248,37,59,197),nrow = 4,ncol = 3, byrow = T)
+colnames(discrimination) <- c("Agree", "Undecided", "Disagree")
+rownames(discrimination) <- c("East","Midwest","South","West")
+```
+
+Now we can run a Pearson Chi Squared Test to discover an answer to the hypotheses.
+```{r, echo=F}
+dis.chi <- chisq.test(discrimination)
+dis.chi
+```
+
+With a p-value less than the alpha $\text{(p < .00001)}$ it is safe to assume the Chi Squared test is significant and after verifying the a priori assumptions we will be able to answer our initial question.
+
+```{r}
+dis.chi$expected > 5
+```
+
+Since all the expected values are over five, we can conclude that this test has been correctly performed and is significant. Given our p-value that's less than the alpha we can reject the null hypothesis in favor of the alternative. Geographic location is associated with support of discrimination. Below is a bar plot of the data set:
+
+```{r, echo=F, fig.align='center'}
+barplot(discrimination, beside = T, legend.text = T
+        , args.legend = list(x = "topleft"), main = "Discrimination vs. Geographic Location", col = c("#AA4488", "#CC99BB", "#114477", "#4477AA"), ylim = c(0,400))
+```
+
+#### Interpretation
+After rejecting our null hypothesis in favor for the alternative hypothesis we can observe from the bar plots above the validity of significance. The south shows heavy discrimination favorance while the East and Midwest show the most distaste for discriminatory policies. The West ranked the lowest in all three categories. This is a great illustration of the association of geographic location and discrimination preference. Further research could be done in more areas around the world or the current areas could broken up into sub groups to further see if geographic location has heavy significance when talking about discrimination and segregation. 

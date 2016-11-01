@@ -1,0 +1,71 @@
+---
+title: "The IQ of Identical Twins"
+output: 
+  html_document:
+    theme: cerulean
+---
+
+```{r, include=FALSE}
+library(mosaic)
+library(pander)
+library(ggplot2)
+```
+
+<br />
+
+#### Background
+
+<p align="justify">Is intelligence inherited or earned? In May of 1966 a study addressing this question was published in the British Journal of Psychology by the author Cyril Burt. Although the conclusions of the study were fascinating, evidence came to light after Burt's death that suggested the data was falsified. The abstract of [the original article](http://onlinelibrary.wiley.com/doi/10.1111/j.2044-8295.1966.tb01014.x/abstract) read as follows, </p>
+
+<div style="padding-left:15px; padding-right:15px;">
+
+<p align="justify">"In the course of a series of investigations into various aspects of mental inheritance an intensive study has been made of so-called ‘identical’ twins. The cases examined...those separated in early infancy, and brought up apart... Despite wide differences in environmental conditions, the correlations for intelligence, unlike those for school attainments, prove to be surprisingly high. It is argued that this implies that ‘intelligence’, when adequately assessed, is largely dependent on genetic constitution..."</p>
+
+</div>
+
+<p align="justify">Use the (fabricated) data in the `Burt` dataset and an appropriate t Test (or tests) to support (or refute) the claim in the abstract. Note that the claim is that intelligence is similar among identical twins that are raised apart.</p>
+<p align="justify">Using an alpha of .05 the hypothesis test are as follows:</p>
+<center>$\alpha = .05$<center>
+<center>$H_{0}:\mu_{D}=0$</center>
+<center>$H_{1}:\mu_{D}\neq0$</center> <br>
+```{r, echo=FALSE, fig.align='center'}
+Burt$difference<-(Burt$IQbio - Burt$IQfoster)
+attach(Burt)
+```
+
+#### Analysis
+<p align="justify">Below is a small sample of the dataset used in our analysis. This sample wasn't the data set used in the test but it shows three snapshots from each group that was apart of these data. In order to find out if the orignal claim is statistically sound a paired sample t-test is the test that will be used. In order to run a paired sample t test the differences between the IQbio and IQfoster must be calculated and then inserted into the data frame.</p>
+<center>
+```{r, echo=FALSE, fig.align='center'}
+tab<-Burt[c(1, 8, 20), ]
+row.names(tab) <- NULL
+pander(tab)
+```
+</center>
+
+<p align="justify">The data must then be tested to conclude whether or not it has a normal distribution. The Q-QPlot below shows that the differences fall within the bounds to considered normal. This gives signifys a green light for the paired sample t-test. </p>
+```{r, echo=FALSE, fig.align='center'}
+qqPlot(difference, main="Distribution Test", xlab="Quantiles", ylab="Differences", col.lines = "#0077b3", col = "#800000", lwd = 1.5, cex = 1, pch = 19)
+```
+
+The t-test was ran using both the IQbio and IQfoster groups. As mentioned above the t-test was ran using a two sided alternative hypothesis to see whether or not the mean differences fell on either side of zero. Below is the R code used to run the t-test. 
+<center>
+```{r, eval=FALSE}
+t.test(IQbio, IQfoster, paired=TRUE)
+```
+
+```{r, echo=FALSE, fig.align='center'}
+#Hypothesis test: the mean differences between IQ is 0.
+#Paired sample t-test. 
+result = t.test(IQbio, IQfoster, paired=TRUE)
+pander(result)
+```
+</center>
+#### Interpretation
+
+<p align="justify">The concluding t-test reveals some interesting things about this data set.  The Test Statistic returned as -0.1244 and the degrees of freedom was 26. The P-Value came back as .902 which fails to reject the null hypothesis. By looking at the results of the t-test we can support the original claim that intelligence is similar among identical twins that are raised apart. We were able to come to this conclussion because our data was  normally distributed as displayed above in the QQ-Plot and the t-test returned a p value greater than .05 therefore signifying the failure to reject our null hypothesis.  </p>
+<center>
+
+</center>
+
+

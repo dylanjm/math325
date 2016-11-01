@@ -1,0 +1,73 @@
+---
+title: "Analysis 1 - Rexburg Housing"
+author: ''
+date: "April 20, 2016"
+output: html_document
+---
+
+#### <font color=”#336699”>Background:</font>  
+<p align="justify">Rexburg is a college town, and as such, there is a large market for student housing. Developers and Apartment Managers must take into account many different factors when calculating the price they will charge to students. One question that arises when looking at a particular dataset taken from the [BYU-Idaho Housing Website](https://web.byui.edu/tis/search) is, "Does rent decrease the farther away students live from the school?"  </p>   
+
+#### <font color=”#336699”>Data Analysis:</font>  
+<p align="justify">To answer the question up above, a few calculations must be made to determine an apartment's aproximate distance from the school. The original dataset contains over 112 observations with each apartment complex's signed longitude and latitude degrees as well as its respective contract prices.  </p>
+
+<p align="justify">In order to calculate distance we must use the Haversine Formula. The Haversine Formula calculates the shortest distance between two longitudinal & latitudinal points or the distance "as the crow flies." This formula also takes into account the spherical shape of the earth and does not calculate the distance as 'flat land' since the world is not flat. (Although, some people might argue against that) It's important not to forget that the world is not perfectly spherical. The Haversine Formula, unfortunatley, does not account for this, but for this analysis only an aproximate measure of distance is needed. </p>
+
+<p align="justify">The distance of all the apartments will be measured from the Manwaring Center on the BYU-Idaho campus. This location was chosen because it is nearly in the center of campus. The coordinates for the Manwaring Center are: -111.782552º, 43.81869º. </p> 
+
+<p align="justify">The R code below shows the function distHaversine() which computes the distance (in meters) from the MC. </p>  
+
+```{r, include = FALSE}
+#We are going to plot all the apartments and find their distances from BYUI
+library("ggplot2", lib.loc="/Library/Frameworks/R.framework/Versions/3.2/Resources/library")
+library("ggmap", lib.loc="/Library/Frameworks/R.framework/Versions/3.2/Resources/library")
+library("geosphere", lib.loc="/Library/Frameworks/R.framework/Versions/3.2/Resources/library")
+library(pander)
+library(geosphere)
+Rent <- read.csv("~/Desktop/Math 325 Notebook/Data/Rent.csv")
+attach(Rent)
+```
+
+```{r}
+#Compute distances
+home = c(-111.782552, 43.81869)
+Rent$Distance <- distHaversine(Rent[c("Longitude", "Latitude")], home)
+```
+  
+<br><center>__Now that all the distances have been computed. Here is a sample of the new data frame.__<center><br/> 
+
+```{r pander, message=FALSE, warning=FALSE, echo=FALSE}
+tab <- Rent[1:3, ]
+panderOptions('digits', 7)
+panderOptions('keep.trailing.zeros', TRUE)
+panderOptions('table.split.table', Inf)
+pander(tab, split.cells = c(10, 10, 8), decimal.mark = ".")
+```
+
+#### <font color=”#336699”>Graphical Summary:</font>
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE, fig.align="center"}
+#Now let's get the map using ggmap from googleMaps
+map <- get_map(location = "BYUI", zoom = 15, maptype = "terrain")
+realMap <- ggmap(map, extent='panel', base_layer=ggplot(Rent, aes(x=Longitude, y=Latitude)))
+finalMap <- realMap + geom_point(aes(x=Longitude, y=Latitude, color=Price), data=Rent, alpha=1, size = 2)
+finalMap <- finalMap + scale_colour_gradientn("Price", colours=c("#ff9966","#cc2900"))
+finalMap <- finalMap + labs(title="Rexburg Approved Housing", x="Longitude", y="Latitude")
+finalMap <- finalMap + theme(plot.title = element_text(hjust = .5, vjust = 1, face = c("bold")))
+print(finalMap)
+```
+
+<p align="justify">After retrieving a baselayer map from Google and plotting all of the apartments using their coordinates, we added a color gradient based on price to visualize the cost of rent surrounding the school. By quick observation it appears that rent seems to rise the farther away from the school. This is an interesting observation and when combining that observation with the scatterplot posted below, we can see that there is a weak postivive relationship between distance and price for student approved housing in Rexburg. </p>
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE, fig.width=6, fig.align='center'}
+#Finnally let's create a scatterplot just so we can remain in the scope of MATH325
+plot <- ggplot(Rent, aes(x = Distance, y = Price))
+plot <- plot + geom_point(aes(x=Distance, y=Price, color=Price), data=Rent, alpha=1, size = 2)
+plot <- plot + scale_colour_gradientn(guide=FALSE, colours=c("#ff9966","#cc2900"))
+plot <- plot + labs(title="Scatterplot", x="Distance", y="Price")
+plot <- plot + theme(plot.title = element_text(hjust = .5, vjust = 1, face = c("bold"))) 
+print(plot)
+```
+
+#### <font color=”#336699”>Conclussion:</font>  
+<p align="justify"> So in repsonse to the original question, "Does rent decrease the farther away students live from the school?" the answer appears to be no. Observing the relationship between distance and price shows that as distance increases so does price. Further analysis could be done using regression or ANOVA to answer more questions about the relationship between price and distance. But the advice I would give to single students until further research was conducted is to buy rental contracts closer to the school.  </p>

@@ -1,0 +1,166 @@
+---
+title: "Ascombe's Quartet - Linear Regression"
+output: 
+  html_document:
+    theme: cerulean
+---
+## Background
+Anscombe's Quartet is an interesting group of four datasets in statistics that shed some light on the importance of graphing your data and not solely relying on statistic summaries to make assumptions about your data. Each dataset has nearly identical statistical properties yet appear very different when graphed. This is part of the reason that one of the assumptions in a simple linear regression is that the residuals are linear in nature. 
+
+Anscombe's Quartet was constructed in 1973 by statistician Francis Anscombe to demonstrate both the importance of graphing data before analyzing it and the effect of outliers on statistical properties. He described the article as being intended to attack the impression among statisticians that "numerical calculations are exact, but graphs are rough."
+
+Today I will walk through an example that will highlight the importance of correctly analyzing your data as well as a few steps on how to create a true Linear Model from these data. 
+
+**Disclaimer:** While these data are not necessarily "applied" in nature. Meaning the X and Y variables have no real world application or significance, a regression can still be appropriate and the theory is what will really be the highlight in this analysis. 
+
+##Questions and Hypotheses
+Although the focus of this analysis is not neccessarily on satsifying or answering a particular hypothesis we will be running a regression and therefore there are some inherent hypotheses that come along with that. 
+
+Anscombe's Quartet is a dataset that was specifically made to satsify all regression assumptions and has already had its hypotheses answered. But to satisfy the grading rubric for this analysis the hypotheses for the regression we will run are below:
+$$
+\alpha = .05
+$$
+$$
+H_{0} = \beta_{1} = 0 
+$$
+$$
+H_{1} = \beta_{1} \neq 0
+$$
+
+The real question we will be looking at in this analysis today is, "Does visualizing your data matter if it seemingly passes all assumptions and is it important to make sure there is a linear relationship in your dataset if you are running a linear regression?"
+
+
+##Data Analysis
+Below is Anscombe's Quartet, comprising of four different data sets each separated by X and Y values. 
+
+<center>
+```{r, include=FALSE}
+library(ggplot2)
+library(gridExtra)
+library(pander)
+library(plyr)
+library(lmtest)
+library(gridExtra)
+data(anscombe)
+```
+
+```{r, echo=FALSE}
+pander(anscombe)
+
+anscombe.1 <- data.frame(x = anscombe[["x1"]], y = anscombe[["y1"]], Set = "Anscombe Set 1")
+anscombe.2 <- data.frame(x = anscombe[["x2"]], y = anscombe[["y2"]], Set = "Anscombe Set 2")
+anscombe.3 <- data.frame(x = anscombe[["x3"]], y = anscombe[["y3"]], Set = "Anscombe Set 3")
+anscombe.4 <- data.frame(x = anscombe[["x4"]], y = anscombe[["y4"]], Set = "Anscombe Set 4")
+
+anscombe.data <- rbind(anscombe.1, anscombe.2, anscombe.3, anscombe.4)
+```
+</center>
+
+At first glance and analysis all four sets have near exact summary statistics. By using the R function `summary(anscombe)` we can that most of these data have identical properties. 
+
+Here is the mean value for X and Y for each data set:
+
+```{r, echo=FALSE, fig.align='center'}
+aggregate(cbind(x, y) ~ Set, anscombe.data, mean)
+```
+
+As well as the Standard Deviation:
+
+```{r, echo=F}
+aggregate(cbind(x, y) ~ Set, anscombe.data, sd)
+```
+
+The correlation between the X and Y values are all nearly identical as well:
+```{r, echo=F}
+correlation <- function(data) {
+    x <- data.frame(r = cor(data$x, data$y))
+    return(x)
+}
+
+ddply(.data = anscombe.data, .variables = "Set", .fun = correlation)
+```
+
+Also the variance is something that can be observed as being almost exactly the same:
+
+```{r, echo=F}
+sapply(5:8, function(x) var(anscombe[, x]))
+```
+
+In order to save time and space I will only show the results of running a linear regression on one test, but keep in mind that all data sets had similar results in Intercepts, Slope, R Squared, and P-Value. Once again I will show the initial hypothesis theories and their respective LaTeX equations as well as our alpha and other important information even though we already know the answer and are not looking to specifically answer these questions:
+$$
+\alpha = .05
+$$
+$$
+H_{0} = \beta_{1} = 0 
+$$
+$$
+H_{1} = \beta_{1} \neq 0
+$$
+
+Also, remember we will never be able to fully know the true relation in a linear model or in other words, the equation: 
+$$
+E\{Y\} = \underbrace{\beta_0 + \beta_1 X}_{\text{true relation}}
+$$
+More often times than not an estimated regression line can be obtained through sample data with the equation:
+$$
+\hat{Y}_i = \underbrace{b_0 + b_1 X_i}_{\text{estimated relation}}
+$$
+
+Since we are using a completely artificial dataset it will not matter so much but it is important to be able to make that distinction when running regressions in the real world. After all, this analysis is more focused on building tests in a smart way!
+
+Okay, let's move onto the results on the regression. Remember, all datasets provided nearly identical results!
+
+```{r, echo=F}
+x1.lm<- lm(y ~ x, data = anscombe.1)
+summary(x1.lm)
+```
+
+As we can see there is an intercept value of approx~ 3 and a slope of .5. We also have and R Squared of .6205 and a P-Value of.002. If we were conducting a test we would have the opportunity to reject our NULL Hypothesis in favor for our alternative.
+
+Let's take a quick recap: So far, all of our data has seemed almost exactly the same. Besides some minute changes between decimals in the thousandths and smaller order of magnitude, our data, on paper could almost pass as being the exact same datasets. In a minute we will create a few graphs to see if our linear regression checks out on all of its' requirements. Soon we will see that not everything is how it seems when it comes to statistics. 
+
+####Let's make some graphs: 
+
+As usual we must check to see if a regression was an appropriate test. We can do that be graphing the variance of the error terms and making sure they are constant as well as graphing the error terms to make sure they are normally distributed. 
+
+```{r, echo=F, fig.align='center'}
+par(mfrow = c(1,2))
+plot(x1.lm, which= 1:2)
+```
+
+Both of these plots show some major suspicion. Let's run a few tests just to make sure we are still good. 
+<center>
+```{r, echo=F}
+bp <- bptest(x1.lm)
+pander(bp)
+shapiro <- shapiro.test(x1.lm$residuals)
+pander(shapiro)
+```
+</center>
+Whew! that was a close one, but both the Breusch-Pagan test and Shapiro-Wilk test confirm our NULL Hypothesis of normality and constant variance. This is a solid regression model and it's almost a shame that it's all artificial, given how difficult it is to find data this easy in the real world. But wait a minute, we haven't even graphed our data yet. We have yet to see what it even looks like. So far to this point we have only ran tests on our data. We haven't had any sort of visualization on these data. 
+
+There is a reason why I haven't plotted these data yet and we will find out in a minute. But first, let's go back over the five assumptions of linear regression:
+
+1. The regression relation between $Y$ and $X$ is linear.
+2. The error terms are normally distributed with $E\{\epsilon_i\}=0$.
+3. The variance of the error terms is constant over all $X$ values.
+4. The $X$ values can be considered fixed and measured without error.
+5. The error terms are independent.
+
+So far we have answered almost every single one of these questions with confidence. The only assumption we haven't fulfilled yet is #1. Let's finally plot our data and find out why it's so important to be able to see the data. 
+
+```{r, echo=F, fig.align='center'}
+p1 <- ggplot(anscombe) + geom_point(aes(x1, y1), color = "darkorange", size = 3) + theme_bw() + scale_x_continuous(breaks = seq(0, 20, 2)) + scale_y_continuous(breaks = seq(0, 12, 2)) + geom_abline(intercept = 3, slope = 0.5, color = "cornflowerblue") + expand_limits(x = 0, y = 0) + labs(title = "dataset 1")
+p2 <- ggplot(anscombe) + geom_point(aes(x2, y2), color = "darkorange", size = 3) + theme_bw() + scale_x_continuous(breaks = seq(0, 20, 2)) + scale_y_continuous(breaks = seq(0, 12, 2)) + geom_abline(intercept = 3, slope = 0.5, color = "cornflowerblue") + expand_limits(x = 0, y = 0) + labs(title = "dataset 2")
+p3 <- ggplot(anscombe) + geom_point(aes(x3, y3), color = "darkorange", size = 3) + theme_bw() + scale_x_continuous(breaks = seq(0, 20, 2)) + scale_y_continuous(breaks = seq(0, 12, 2)) + geom_abline(intercept = 3, slope = 0.5, color = "cornflowerblue") + expand_limits(x = 0, y = 0) + labs(title = "dataset 3")
+p4 <- ggplot(anscombe) + geom_point(aes(x4, y4), color = "darkorange", size = 3) + theme_bw() + scale_x_continuous(breaks = seq(0, 20, 2)) + scale_y_continuous(breaks = seq(0, 12, 2)) + geom_abline(intercept = 3, slope = 0.5, color = "cornflowerblue") + expand_limits(x = 0, y = 0) + labs(title = "dataset 4")
+
+grid.arrange(p1, p2, p3, p4, top = "Anscombe's Quartet")
+```
+
+##Interpretation
+Wow, how interesting is that? 4 datasets, all with near exact statistical properties, but only one of them actually has a linear trend. Just imagine what kind of mistakes or oversights are being done today in statistical studies by people who believe that their data is one way when it's really another. Datasets 2-4 do not pass the acceptable requirements for a regression model and only dataset 1 will be able to run a linear regression using Y as the quantitative response variable and X as the quantitative explanatory variable. A lot of time could be saved if we plan to always visualize our data first before we start analyzing. 
+
+Throughout this analysis I learned a lot of really cool and interesting things about statistics and simple linear regression. I highly suggest everybody try to mess around with the `ascombe` dataset in R and see what the other LM tests say. If you want to know more about Ascombe's Quartet I would suggest going here: 
+<br />
+

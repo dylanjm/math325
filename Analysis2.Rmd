@@ -1,0 +1,56 @@
+---
+title: "Chicken Weight"
+output:
+  html_document: default
+  pdf_document:
+    fig_width: 7
+setmainfont: Arial
+geometry: margin=.25in
+usekpackage: fontspec
+---
+```{r, include=FALSE}
+library(mosaic)
+library(pander)
+library(ggplot2)
+library(data.table)
+```
+#### Background
+<p align="justify">An experiment was conducted "on the effect of diet on early growth of chicks." A total of 50 chicks were assigned to one of four possible diets. Weight measurements on each chick were taken (in grams) at birth (day 0) as well as on days 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, and 21. Four chicks do not have measurements at all times (chicks 8, 15, 16, and 18). The dataset `ChickWeight` contains the data from this experiment. The goal of the study is to identify the diet that produces the greatest increase in chick weights.</p>
+
+#### Analysis
+<p align="justify">After cleaning up and reshaping the data we were able to remove some chicken's who had missing value as they would have added bias to the numbers. Since we have multiple independent variables it was determined that the best way to plot the data was through a boxplot. The boxplot helps paint a detailed picture of the growth that each diet had on the chickens. This gives us the variance in growth each diet had on the chicken as well as the upper and lower quartiles and the mean. Below is a table of our data frame with samples from each diet group. We did not create the boxplot using these sample data but rather, used the data in its entirety.</p>
+\fontencoding{T1}\fontfamily{droidsans}\fontseries{l}\fontshape{n}\selectfont
+```{r, echo=FALSE, fig.align='center'}
+# To reshape data you need the 
+# http://www.ats.ucla.edu/stat/r/faq/reshape.htm
+
+ChickWide <- reshape(ChickWeight,
+                     timevar = "Time",
+                     idvar = c("Chick","Diet"),
+                     direction = 'wide')
+names(ChickWide) <- sub("weight", "w", names(ChickWide))
+names(ChickWide) <- sub("Chick", "chick", names(ChickWide))
+names(ChickWide) <- sub("Diet", "diet", names(ChickWide))
+ChickWide$growth <- ChickWide$w.21 - ChickWide$w.0
+tab <- ChickWide[c(1, 21, 31, 41),]
+panderOptions('table.split.table', Inf)
+row.names(tab) <- NULL
+pander(tab)
+attach(ChickWide)
+```
+\large
+```{r, echo=FALSE, warning=FALSE, fig.align='center'}
+chick <- ggplot(data=ChickWide, aes(x=diet, y=growth)) + geom_boxplot(fill='#A4A4A4', color="darkred")  
+chick <- chick + labs(title="Diet vs Growth ")
+chick <- chick + theme(plot.title = element_text(size=14, face="bold"),
+                       #panel.background = element_rect(fill = "#336699"), 
+                       panel.grid.major.y = element_line(colour = "#4080bf"),
+                       panel.grid.minor = element_line(colour = "#4080bf"),
+                       panel.grid.major.x = element_blank())
+chick <- chick + scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9", "#999999"))
+print(chick)
+```
+
+#### Interpretation
+<p align="justify">After reviewing the boxplot, a few observations can be made. Diet 3 seems to have the highest mean growth out of all of the diets. While there is some variance in diet 3, Diet 2 has the largest variance with measurements reaching far below 100 and near 300. Diet 4 is the most consistent in growth amounts but the average growth for chickens in that category is not as high as diet 3. Diet 1 shows the lowest average growth in chickens out of all diets tested.</p>
+
